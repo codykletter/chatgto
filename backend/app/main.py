@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 import os
 import firebase_admin
 from firebase_admin import credentials
-from app.api.v1 import health, users
+from app.api.v1 import health, users, practice
 
 load_dotenv()
 
@@ -32,6 +32,7 @@ app.add_middleware(
 
 app.include_router(health.router, prefix="/api/v1")
 app.include_router(users.router, prefix="/api/v1")
+app.include_router(practice.router, prefix="/api/v1")
 
 @app.on_event("startup")
 def startup_db_client():
