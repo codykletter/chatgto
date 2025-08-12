@@ -1,0 +1,67 @@
+.poker-table {
+  background-color: #0a6a0a; /* Dark green felt color */
+  border-radius: 50%;
+  width: 800px;
+  height: 400px;
+  position: relative;
+  border: 10px solid #5d4037; /* Wood-like border */
+  box-shadow: 0 0 20px rgba(0,0,0,0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.community-cards-area {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.player-hand-area {
+  display: flex;
+  gap: 10px;
+}
+
+.playing-card {
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  width: 80px;
+  height: 112px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 5px;
+  font-size: 24px;
+  font-weight: bold;
+  box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+  position: relative;
+}
+
+.playing-card.red {
+  color: #ff0000;
+}
+
+.playing-card.black {
+  color: #000000;
+}
+
+.card-rank {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+}
+
+.card-suit {
+  font-size: 32px;
+  text-align: center;
+  line-height: 1;
+}
+
+.actions-area {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+}
