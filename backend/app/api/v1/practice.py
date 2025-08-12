@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from typing import List
 from app.models.attempt import Attempt
-from app.models.scenario import Scenario
+from app.models.scenario import Scenario, Street
 from app.models.gto_action import GtoAction
 
 router = APIRouter()
@@ -15,6 +15,7 @@ mock_scenarios = [
         stack_size=100,
         hole_cards=["As", "Ks"],
         community_cards=[],
+        street=Street.PRE_FLOP,
         gto_actions=[
             GtoAction(action="Fold", ev=-0.5, explanation="Folding is a significant EV loss with a premium hand like AKs."),
             GtoAction(action="Call", ev=8.0, explanation="Calling is profitable, but raising is optimal to isolate and build a pot."),
@@ -29,6 +30,7 @@ mock_scenarios = [
         stack_size=100,
         hole_cards=["7h", "2d"],
         community_cards=[],
+        street=Street.PRE_FLOP,
         gto_actions=[
             GtoAction(action="Fold", ev=0, explanation="Folding is the correct play with the worst hand in poker pre-flop."),
             GtoAction(action="Check", ev=-4.5, explanation="Checking is an option, but folding is better to avoid difficult post-flop spots.")
@@ -37,9 +39,12 @@ mock_scenarios = [
     )
 ]
 
-@router.get("/practice/scenarios/{category}", response_model=List[Scenario])
-def get_scenarios_by_category(category: str):
-    return [s for s in mock_scenarios if s.category == category]
+@router.get("/practice/scenarios", response_model=List[Scenario])
+def get_scenarios(category: str, street: Street = None):
+    scenarios = [s for s in mock_scenarios if s.category == category]
+    if street:
+        scenarios = [s for s in scenarios if s.street == street]
+    return scenarios
 
 @router.post("/practice/attempt")
 def post_attempt(attempt: Attempt):

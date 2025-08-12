@@ -1,9 +1,18 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import "./poker.css"; // Import the new CSS
+import { PlayingCard } from "@/components/ui/playing-card";
+import { CommunityCards } from "@/components/ui/community-cards";
 
 interface GtoAction {
     action: string;
@@ -20,6 +29,7 @@ interface Scenario {
     community_cards: string[];
     gto_actions: GtoAction[];
     correct_action: GtoAction;
+    street: "pre-flop" | "post-flop" | "turn" | "river";
 }
 
 interface Feedback {
@@ -31,28 +41,6 @@ interface Feedback {
     alternative_line: GtoAction[] | null;
 }
 
-// Helper to get card details
-const getCardDetails = (card: string) => {
-    const rank = card.slice(0, -1);
-    const suit = card.slice(-1);
-    const suitSymbol = {
-        's': '♠', 'h': '♥', 'd': '♦', 'c': '♣'
-    }[suit] || '';
-    const color = (suit === 'h' || suit === 'd') ? 'red' : 'black';
-    return { rank, suit: suitSymbol, color };
-};
-
-// PlayingCard component
-const PlayingCard = ({ card }: { card: string }) => {
-    const { rank, suit, color } = getCardDetails(card);
-    return (
-        <div className={`playing-card ${color}`}>
-            <span className="card-rank">{rank}</span>
-            <span className="card-suit">{suit}</span>
-        </div>
-    );
-};
-
 export default function TrainingPage() {
   const router = useRouter();
   const [scenario, setScenario] = useState<Scenario | null>(null);
@@ -60,6 +48,7 @@ export default function TrainingPage() {
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [isActionTaken, setIsActionTaken] = useState(false);
+  const [selectedStreet, setSelectedStreet] = useState("all");
 
   const fetchScenario = async () => {
       try {
@@ -114,19 +103,31 @@ export default function TrainingPage() {
   if (error) return <p className="text-center mt-10 text-red-500">Error: {error}</p>;
   if (!scenario) return <p className="text-center mt-10">No scenario found.</p>;
 
+  const communityCards = ['As', 'Kd', 'Qh'];
+  const showCommunityCards = scenario.street && ['post-flop', 'turn', 'river'].includes(scenario.street);
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-4">
+      <div className="w-full max-w-4xl mx-auto flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">GTO Poker Trainer</h1>
+        <Select value={selectedStreet} onValueChange={setSelectedStreet}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Filter by street" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Streets</SelectItem>
+            <SelectItem value="pre-flop">Pre-Flop</SelectItem>
+            <SelectItem value="post-flop">Post-Flop</SelectItem>
+            <SelectItem value="turn">Turn</SelectItem>
+            <SelectItem value="river">River</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
         <div className="poker-table">
-            <div className="community-cards-area">
-                {scenario.community_cards.length > 0 ? (
-                    scenario.community_cards.map((card) => <PlayingCard key={card} card={card} />)
-                ) : (
-                    <p className="text-gray-400">Pre-flop</p>
-                )}
-            </div>
             <div className="player-hand-area">
                 {scenario.hole_cards.map((card) => <PlayingCard key={card} card={card} />)}
             </div>
+            {showCommunityCards && <CommunityCards cards={communityCards} />}
         </div>
         <div className="actions-area">
             {scenario.gto_actions.map((gto_action) => (
