@@ -20,16 +20,26 @@ interface GtoAction {
     explanation?: string;
 }
 
+interface Opponent {
+    position: string;
+}
+
+interface Hero {
+    position: string;
+    hole_cards: string[];
+    stack_size: number;
+}
+
 interface Scenario {
     id: string;
     category: string;
-    position: string;
-    stack_size: number;
-    hole_cards: string[];
-    community_cards: string[];
+    stage: string;
+    hero: Hero;
+    opponents: Opponent[];
     gto_actions: GtoAction[];
-    correct_action: GtoAction;
-    street: "pre-flop" | "post-flop" | "turn" | "river";
+    flop?: string[];
+    turn?: string;
+    river?: string;
 }
 
 interface Feedback {
@@ -48,31 +58,34 @@ export default function TrainingPage() {
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [isActionTaken, setIsActionTaken] = useState(false);
-  const [selectedStreet, setSelectedStreet] = useState("all");
+  const [selectedStage, setSelectedStage] = useState("Preflop");
 
-  const fetchScenario = async () => {
-      try {
-        const response = await fetch("http://localhost:8000/api/v1/practice/scenarios/cash_game");
-        if (!response.ok) {
-          throw new Error("Failed to fetch scenario");
-        }
-        const data = await response.json();
-        if (data.length > 0) {
-          const randomIndex = Math.floor(Math.random() * data.length);
-          setScenario(data[randomIndex]);
-        } else {
-          setScenario(null);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "An unknown error occurred");
-      } finally {
-        setLoading(false);
+  const fetchScenario = async (stage: string) => {
+    setLoading(true);
+    setError(null);
+    setFeedback(null);
+    setIsActionTaken(false);
+    try {
+      const response = await fetch(
+        `http://localhost:8000/api/v1/practice/scenario?stage=${stage.toLowerCase()}`
+      );
+      if (!response.ok) {
+        throw new Error(`Failed to fetch scenario: ${response.statusText}`);
       }
-    };
+      const data = await response.json();
+      setScenario(data);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "An unknown error occurred"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    fetchScenario();
-  }, []);
+    fetchScenario(selectedStage);
+  }, [selectedStage]);
 
   const handleAction = async (action: string) => {
     if (!scenario) return;
@@ -92,50 +105,71 @@ export default function TrainingPage() {
   };
 
   const fetchNextScenario = () => {
-    setLoading(true);
-    setFeedback(null);
-    setIsActionTaken(false);
-    setScenario(null);
-    fetchScenario();
+    fetchScenario(selectedStage);
   }
 
   if (loading) return <p className="text-center mt-10">Loading scenario...</p>;
   if (error) return <p className="text-center mt-10 text-red-500">Error: {error}</p>;
   if (!scenario) return <p className="text-center mt-10">No scenario found.</p>;
 
-  const communityCards = ['As', 'Kd', 'Qh'];
-  const showCommunityCards = scenario.street && ['post-flop', 'turn', 'river'].includes(scenario.street);
+  const getCommunityCardsForStage = () => {
+    if (!scenario) return [];
+    const cards = [];
+    if (scenario.flop) cards.push(...scenario.flop);
+    if (scenario.turn) cards.push(scenario.turn);
+    if (scenario.river) cards.push(scenario.river);
+    return cards;
+  };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-4">
       <div className="w-full max-w-4xl mx-auto flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">GTO Poker Trainer</h1>
-        <Select value={selectedStreet} onValueChange={setSelectedStreet}>
+        <Select value={selectedStage} onValueChange={setSelectedStage}>
           <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter by street" />
+            <SelectValue placeholder="Select a stage" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Streets</SelectItem>
-            <SelectItem value="pre-flop">Pre-Flop</SelectItem>
-            <SelectItem value="post-flop">Post-Flop</SelectItem>
-            <SelectItem value="turn">Turn</SelectItem>
-            <SelectItem value="river">River</SelectItem>
+            <SelectItem value="Preflop">Preflop</SelectItem>
+            <SelectItem value="Flop">Flop</SelectItem>
+            <SelectItem value="Turn">Turn</SelectItem>
+            <SelectItem value="River">River</SelectItem>
           </SelectContent>
         </Select>
       </div>
-        <div className="poker-table">
-            <div className="player-hand-area">
-                {scenario.hole_cards.map((card) => <PlayingCard key={card} card={card} />)}
+      <div className="poker-table">
+        {scenario.opponents.map((opponent, index) => (
+          <div key={index} className={`opponent-area opponent-${index}`}>
+            <div className="opponent-details">
+              <p>{opponent.position}</p>
+              <div className="hidden-cards">
+                <div className="playing-card-back"></div>
+                <div className="playing-card-back"></div>
+              </div>
             </div>
-            {showCommunityCards && <CommunityCards cards={communityCards} />}
+          </div>
+        ))}
+        <div className="player-hand-area">
+          <p className="player-position">{scenario.hero.position}</p>
+          {scenario.hero.hole_cards.map((card) => (
+            <PlayingCard key={card} card={card} />
+          ))}
         </div>
-        <div className="actions-area">
-            {scenario.gto_actions.map((gto_action) => (
-              <Button key={gto_action.action} size="lg" className="min-w-[120px]" onClick={() => handleAction(gto_action.action)} disabled={isActionTaken}>
-                  {gto_action.action}
-              </Button>
-            ))}
-        </div>
+        <CommunityCards cards={getCommunityCardsForStage()} />
+      </div>
+      <div className="actions-area">
+        {scenario.gto_actions.map((gto_action) => (
+          <Button
+            key={gto_action.action}
+            size="lg"
+            className="min-w-[120px]"
+            onClick={() => handleAction(gto_action.action)}
+            disabled={isActionTaken}
+          >
+            {gto_action.action}
+          </Button>
+        ))}
+      </div>
         {feedback && (
             <div className="feedback-area mt-4 p-4 rounded-lg bg-gray-800 w-full max-w-2xl text-center">
                 <h2 className={`text-2xl font-bold mb-2 ${feedback.is_correct ? "text-green-400" : "text-red-400"}`}>

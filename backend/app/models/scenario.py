@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 from app.models.gto_action import GtoAction
 from enum import Enum
 
@@ -9,13 +9,21 @@ class Street(str, Enum):
     TURN = "turn"
     RIVER = "river"
 
+class Opponent(BaseModel):
+    position: str
+    hole_cards: List[str]
+
+
 class Scenario(BaseModel):
     id: str
     category: str
-    position: str
+    position: str  # Hero's position
     stack_size: int
-    hole_cards: List[str]
-    community_cards: List[str]
+    hole_cards: List[str]  # Hero's hole cards
+    opponents: List[Opponent]
     gto_actions: List[GtoAction]
     correct_action: GtoAction
-    street: Street = Street.PRE_FLOP
+    stage: str
+    flop: Optional[List[str]] = None
+    turn: Optional[str] = None
+    river: Optional[str] = None
