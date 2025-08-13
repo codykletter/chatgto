@@ -18,7 +18,17 @@ The backend is a [FastAPI](https://fastapi.tiangolo.com/) application, which is 
 
 The frontend and backend communicate via a RESTful API. The frontend sends HTTP requests to the backend to fetch data, submit user actions, and manage user accounts. The backend processes these requests, interacts with the database, and returns JSON responses to the frontend.
 
-## 2. Key Modules, Classes, and Functions
+## 2. Recent Changes
+
+### Multi-player Scenarios
+
+The backend now supports scenarios with multiple players. The frontend has been updated to display the hero's cards, community cards, and all opponent positions. This allows for more realistic and complex training simulations.
+
+### Bug Fixes
+
+A critical bug in the backend that caused a 500 Internal Server Error when submitting an attempt has been resolved. The error was an `AttributeError` in `backend/app/api/v1/practice.py`, which occurred when the user's action was not found in the scenario's GTO actions. The code now handles this case gracefully.
+
+## 3. Key Modules, Classes, and Functions
 
 ### Backend
 
@@ -29,7 +39,7 @@ The frontend and backend communicate via a RESTful API. The frontend sends HTTP 
     -   **`health.py`**: A simple health check endpoint.
 -   **`models/`**: This directory contains the Pydantic data models that define the structure of the data used in the application.
     -   **`User`**: Represents a user with a `firebase_uid` and `email`.
-    -   **`Scenario`**: Represents a poker training scenario.
+    -   **`Scenario`**: Represents a poker training scenario. Now supports multiple players.
     -   **`GtoAction`**: Represents a possible action within a scenario.
     -   **`Attempt`**: Represents a user's attempt at a scenario.
 -   **`scripts/seed_db.py`**: A script to populate the database with initial data.
@@ -47,7 +57,7 @@ The frontend and backend communicate via a RESTful API. The frontend sends HTTP 
 -   **`lib/firebase.ts`**: Initializes and configures the Firebase SDK for the frontend.
 -   **`components/`**: This directory contains reusable React components.
 
-## 3. Data Flow
+## 4. Data Flow
 
 1.  **User Registration**: A new user signs up on the registration page. The frontend uses Firebase Authentication to create a new user account. It then sends a request to the backend's `/api/v1/users` endpoint to store the user's information in the MongoDB database.
 2.  **User Login**: A user logs in on the login page. The frontend uses Firebase Authentication to sign the user in. The `AuthContext` is updated with the user's information, which is then available to all components.
@@ -61,7 +71,7 @@ The frontend and backend communicate via a RESTful API. The frontend sends HTTP 
     -   The backend evaluates the action against the correct action for the scenario and returns feedback, including whether the action was correct, the EV difference, and an explanation.
     -   The frontend displays the feedback to the user.
 
-## 4. Current Limitations
+## 5. Current Limitations
 
 -   **Mock Data**: The backend currently uses mock data for the practice scenarios. This should be replaced with a system that retrieves scenarios from the MongoDB database. The `seed_db.py` script provides a starting point for this.
 -   **No User-Specific Data**: The dashboard displays static, hardcoded stats. There is no system in place to track a user's progress or performance over time.
